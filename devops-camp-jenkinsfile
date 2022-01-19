@@ -32,8 +32,8 @@ pipeline {
     }
     post {
         cleanup {
-            echo "Clean workspace"
+          echo "Clean workspace"
             sh 'rm -rf .git ./*'
         }
     }
-
+}
