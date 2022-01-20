@@ -26,6 +26,16 @@ pipeline {
         stage('Application docker build') {
             steps {
                 echo "Building application image"
+               withCredentials([usernameColonPassword(credentialsId: 'rlevy-harbor-auth', variable: 'HARBOR-AUTH')]) {
+                    script {
+                        docker.build('$APP_IMAGE_NAME-$COMMIT_HASH', '-f ./app/Dockerfile ./afs-labs-student')
+                        docker.withRegistry('https://$HARBOR_REGISTRY', 'rlevy-harbor-auth') {
+                            sh 'docker tag $APP_IMAGE_NAME-$COMMIT_HASH $HARBOR_REGISTRY/$HARBOR_PROJECT/$APP_IMAGE_NAME:$COMMIT_HASH-$PIPELINE_HASH'
+                            sh 'docker push $HARBOR_REGISTRY/$HARBOR_PROJECT/$APP_IMAGE_NAME:$COMMIT_HASH-$PIPELINE_HASH'
+                        }
+                    }
+                }
+            }
             post {
                 always {
                     echo "Clean local $APP_IMAGE_NAME image"
@@ -38,25 +48,21 @@ pipeline {
                         }
                     }
                 }
-            } 
-           }
-
-withCredentials([usernameColonPassword(credentialsId: 'rlevy-harbor-auth', variable: 'HARBOR-AUTH')]) {
-                    script {
-                        docker.build('$APP_IMAGE_NAME-$COMMIT_HASH', '-f ./app/Dockerfile ./afs-labs-student')
-                        docker.withRegistry('https://$HARBOR_REGISTRY', 'rlevy-harbor-auth') {
-                            sh 'docker tag $APP_IMAGE_NAME-$COMMIT_HASH $HARBOR_REGISTRY/$HARBOR_PROJECT/$APP_IMAGE_NAME:$COMMIT_HASH-$PIPELINE_HASH'
-                            sh 'docker push $HARBOR_REGISTRY/$HARBOR_PROJECT/$APP_IMAGE_NAME:$COMMIT_HASH-$PIPELINE_HASH'
-                        }
-                    }
-                }
-    }
+            }
         }
         stage('Database docker build') {
             steps {
                 echo "Building database image"
+                withCredentials([usernameColonPassword(credentialsId: 'rlevy-harbor-auth', variable: 'HARBOR-AUTH')]) {
+                    script {
+                        docker.build('$DB_IMAGE_NAME-$COMMIT_HASH', '-f ./db/Dockerfile ./afs-labs-student')
+                        docker.withRegistry('https://$HARBOR_REGISTRY', 'rlevy-harbor-auth') {
+                            sh 'docker tag $DB_IMAGE_NAME-$COMMIT_HASH $HARBOR_REGISTRY/$HARBOR_PROJECT/$APP_IMAGE_NAME:$COMMIT_HASH-$PIPELINE_HASH'
+                            sh 'docker push $HARBOR_REGISTRY/$HARBOR_PROJECT/$APP_IMAGE_NAME:$COMMIT_HASH-$PIPELINE_HASH'
+                        }
+                    }
+                }
             }
-        }
             post {
                 always {
                     echo "Clean local $DBP_IMAGE_NAME image"
@@ -70,17 +76,7 @@ withCredentials([usernameColonPassword(credentialsId: 'rlevy-harbor-auth', varia
                     }
                 }
             }
-withCredentials([usernameColonPassword(credentialsId: 'rlevy-harbor-auth', variable: 'HARBOR-AUTH')]) {
-                    script {
-                        docker.build('$DB_IMAGE_NAME-$COMMIT_HASH', '-f ./db/Dockerfile ./afs-labs-student')
-                        docker.withRegistry('https://$HARBOR_REGISTRY', 'rlevy-harbor-auth') {
-                            sh 'docker tag $DB_IMAGE_NAME-$COMMIT_HASH $HARBOR_REGISTRY/$HARBOR_PROJECT/$APP_IMAGE_NAME:$COMMIT_HASH-$PIPELINE_HASH'
-                            sh 'docker push $HARBOR_REGISTRY/$HARBOR_PROJECT/$APP_IMAGE_NAME:$COMMIT_HASH-$PIPELINE_HASH'
-                        }
-                    }
-                }
-    }
-}
+        }
         stage('Test'){
             steps {
                 echo "Testing stage"
